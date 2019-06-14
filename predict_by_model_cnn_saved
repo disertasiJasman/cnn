@@ -1,0 +1,47 @@
+from keras.models import load_model
+from util.ImageGenerator import generateDataSetValidTest
+from util.UtilPath import getDirectoryPath
+from util.ImageGenerator import getLabels
+from util.ImageGenerator import *
+from sklearn.preprocessing import LabelEncoder
+from util.Util import getAccuracy
+from xgboost import XGBClassifier
+from util.model_cnn import *
+from sklearn.metrics import accuracy_score
+from util.UtilPath import *
+from util.plot_fig import *
+
+
+def main():
+    print("Generate Feature Map by CNN")
+
+    dir_test = getDirectoryPath()
+    input_shape = (150, 150, 3)
+    n_test = getListOfFileDir(dir_test, ".jpg")
+
+    counter = 20
+    batch_size_test = len(n_test) // counter
+
+    # get direktori test
+    (data_test, test_labels, Category_test) = generateDataSetValidTest(test_dir=dir_test, input_shape=input_shape,
+                                                                       batch_size=batch_size_test, counter=counter)  # 1940
+
+    labels_names = getLabels(Category_test)
+    le = LabelEncoder()
+
+
+    encoded_labels = le.fit_transform(labels_names)
+    model = load_model('ghim20k_6_41_200.h5')
+    model.summary()
+
+    print("Dengan CNN")
+    getAccuracy(model, data_test, test_labels)
+    full_multiclass_report_save_img(model,
+                                    data_test,
+                                    test_labels,
+                                    classes=le.inverse_transform(np.arange(len(labels_names))), savefilename="img/final_model1_ghim20k_cnn.jpg")
+
+
+
+if __name__ == "__main__":
+    main()
