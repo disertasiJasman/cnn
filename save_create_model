@@ -1,0 +1,83 @@
+from __future__ import print_function
+
+from keras import backend as K
+from keras.datasets import cifar10
+
+from keras.models import Sequential
+from keras.layers import Dense, Dropout, Flatten
+from keras.layers import Conv2D, MaxPooling2D
+from keras.optimizers import SGD, Adagrad, Adadelta, RMSprop, Adam
+from util.UtilPath import getDirectoryPath
+from util.ImageGenerator import generateDataset
+
+from util.ImageGenerator import generateDataSetValidTest
+from keras.callbacks import LearningRateScheduler
+from util.plot_fig import *
+from util.learning_rate_hyper_parameter import *
+from util.UtilPath import getDirectoryPath
+from util.model_cnn import modelSimpleGhim20k
+from util.ImageGenerator import getLabels
+from sklearn.preprocessing import LabelEncoder
+from util.UtilPath import getListOfFileDir
+
+def main():
+    print("Hello Hyper-parameter")
+    print("Generate model cnn")
+    dir_train = getDirectoryPath()  # 6250
+    dir_valid = getDirectoryPath()  # 3125
+    dir_test = getDirectoryPath()   # 3125
+    input_shape = (150, 150, 3)
+    batch_size = 100
+    num_classes =20
+    epochs = 200
+
+    n = getListOfFileDir(dir_test, ".jpg")
+    print("Banyaknya file train = ", len(getListOfFileDir(dir_train, ".jpg")))
+    print("Banyaknya file valid = ", len(getListOfFileDir(dir_valid, ".jpg")))
+    print("Banyaknya file test = ", len(getListOfFileDir(dir_test, ".jpg")))
+
+
+
+    # get direktory train
+    (data_train, train_labels, Category) = generateDataset(dir=dir_train, input_shape=input_shape, batch_size=300,
+                                                           counter=20)  # 300*20
+    print(data_train.shape)
+    # get direktory validasi
+    (data_valid, valid_labels, Category_valid) = generateDataSetValidTest(test_dir=dir_valid, input_shape=input_shape,
+                                                                          batch_size=50, counter=20)  # 100
+    print(data_valid.shape)
+    # get direktori test
+    (data_test, test_labels, Category_test) = generateDataSetValidTest(test_dir=dir_test, input_shape=input_shape,
+                                                                       batch_size=50, counter=20)  # 1940
+    print(data_test.shape)
+    labels_names = getLabels(Category)
+    print(labels_names)
+    le = LabelEncoder()
+    encoded_labels = le.fit_transform(labels_names)
+
+
+    # fit CNN model using Adadelta optimizer
+    model6 = modelSimpleGhim20k()
+    model6.compile(loss=keras.losses.categorical_crossentropy,
+                   optimizer=Adadelta(lr=1.0, rho=0.95, epsilon=1e-08, decay=0.0),
+                   metrics=['accuracy'])
+
+    history6 = model6.fit(data_train, train_labels,
+                          validation_data=(data_valid, valid_labels),
+                          epochs=epochs,
+                          batch_size=batch_size,
+                          verbose=2)
+    model6.save('ghim20k_6_41_200.h5')
+    plot_history_save_img(history6, savefilename="img/model6_ghim20k")
+
+
+    full_multiclass_report_save_img(model6,
+                                    data_test,
+                                    test_labels,
+                                    classes=le.inverse_transform(np.arange(20)), savefilename="img/model6_ghim20k.jpg")
+
+    
+
+    
+if __name__ == "__main__":
+    main()
